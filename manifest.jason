@@ -1,20 +1,25 @@
-﻿{
+{
   "short_name": "طبيبي",
-  "name": "طبيبي في حلب - دليل الأطباء",
+  "name": "طبيبي في حلب — دليل الأطباء",
+  "description": "ابحث عن طبيب في حلب حسب التخصص والمنطقة",
   "icons": [
     {
       "src": "icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "/mydoctor/",
+  "scope": "/mydoctor/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f4f7fa",
   "theme_color": "#0d6efd",
   "dir": "rtl",
