@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>طبيبي في حلب</title>
+<title>دليل حلب الصحي</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0d6efd">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="طبيبي">
+<meta name="apple-mobile-web-app-title" content="دليل حلب الصحي">
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -109,7 +109,19 @@
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-right: 4px solid #0d6efd;
   }
+
+  /* 🆕 ألوان حسب النوع */
+  .card[data-type="مشفى"] { border-right-color: #dc3545; }
+  .card[data-type="طبيب"] { border-right-color: #0d6efd; }
+  .card[data-type="صيدلية"] { border-right-color: #198754; }
+  .card[data-type="مختبر"] { border-right-color: #6f42c1; }
+  .card[data-type="مركز أشعة"] { border-right-color: #fd7e14; }
+  .card[data-type="عيادة بصرية"] { border-right-color: #20c997; }
+  .card[data-type="عيادات الأسنان"] { border-right-color: #0dcaf0; }
+  .card[data-type="عيادة"] { border-right-color: #6c757d; }
+  .card[data-type="معالجة فيزيائية"] { border-right-color: #d63384; }
 
   .card h3 {
     color: #0d6efd;
@@ -128,6 +140,16 @@
     margin-bottom: 8px;
   }
 
+  .badge-type {
+    background: #fff3cd;
+    color: #664d03;
+  }
+
+  .badge-specialty {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+
   .card p {
     font-size: 0.95rem;
     margin-bottom: 4px;
@@ -136,7 +158,6 @@
 
   .card p strong { color: #1a2b3c; }
 
-  /* 🆕 قسم الأرقام */
   .phones-section {
     margin-top: 12px;
     padding-top: 10px;
@@ -212,14 +233,18 @@
 <body>
 
 <header>
-  <h1>🩺 طبيبي في حلب</h1>
-  <p>ابحث عن الطبيب المناسب حسب التخصص والمنطقة</p>
+  <h1>🏥 دليل حلب الصحي</h1>
+  <p>ابحث عن طبيب، مشفى، صيدلية، مختبر، أو مركز أشعة</p>
 </header>
 
 <button id="installButton">📲 تثبيت التطبيق على الموبايل</button>
 
 <div class="filters">
-  <input type="text" id="search" placeholder="🔍 ابحث بالاسم أو التخصص أو المنطقة...">
+  <input type="text" id="search" placeholder="🔍 ابحث بالاسم أو العنوان...">
+
+  <select id="type">
+    <option value="">كل الأنواع</option>
+  </select>
 
   <select id="specialty">
     <option value="">كل التخصصات</option>
@@ -237,12 +262,12 @@
 
 <div class="count" id="count"></div>
 <div class="doctors" id="doctors">
-  <div class="loading">⏳ جاري تحميل بيانات الأطباء...</div>
+  <div class="loading">⏳ جاري تحميل البيانات...</div>
 </div>
 
 <footer>
   البيانات لأغراض إرشادية فقط — يُرجى التأكد عند الاتصال.<br>
-  © 2026 طبيبي في حلب
+  © 2026 دليل حلب الصحي
 </footer>
 
 <script>
@@ -250,85 +275,63 @@
    📞 دالة تنسيق الأرقام
    ============================================ */
 function formatPhone(raw) {
-  // 1. تنظيف من أي رموز
   let p = String(raw).trim().replace(/[^0-9+]/g, '');
   if (!p) return null;
 
-  // 2. إزالة رمز سوريا الدولي إن وُجد
   if (p.startsWith('+963')) p = p.substring(4);
   else if (p.startsWith('963')) p = p.substring(3);
 
-  // 3. إزالة الصفر إن وُجد
   if (p.startsWith('0')) p = p.substring(1);
 
-  // 4. تحديد النوع وإضافة الصفر أو 021
   let phone = '';
   let isMobile = false;
-
   const len = p.length;
 
   if (p.startsWith('9') && len === 9) {
-    // موبايل: 9xxxxxxxx → 09xxxxxxxx
     phone = '0' + p;
     isMobile = true;
   } else if (p.startsWith('21') && (len === 8 || len === 9)) {
-    // أرضي حلب: 21xxxxxxx → 021xxxxxxx
     phone = '0' + p;
     isMobile = false;
   } else if (p.startsWith('2') && (len === 7 || len === 8)) {
-    // أرضي حلب بدون 21: 2xxxxxx → 0212xxxxxx
     phone = '021' + p;
     isMobile = false;
   } else {
-    // حالات غير متوقعة — نتركها كما هي مع صفر
     phone = p.startsWith('0') ? p : '0' + p;
     isMobile = phone.startsWith('09');
   }
 
-  // 5. صيغة الواتساب
   const whatsapp = isMobile ? ('963' + phone.substring(1)) : null;
-
   return { phone, whatsapp, isMobile };
 }
 
-/* ============================================
-   📋 تحليل حقل phones
-   ============================================ */
 function parsePhones(rawPhones) {
   if (!rawPhones) return [];
-
-  // تقسيم حسب أي فاصل: ; ؛ , \
   const parts = String(rawPhones).split(/[;؛,\\]+/);
-
   const result = [];
   const seen = new Set();
 
   for (let part of parts) {
     const trimmed = part.trim();
     if (!trimmed) continue;
-
     const formatted = formatPhone(trimmed);
     if (!formatted) continue;
-
-    // منع التكرار
     if (seen.has(formatted.phone)) continue;
     seen.add(formatted.phone);
-
     result.push(formatted);
-    if (result.length >= 3) break; // حد أقصى 3
+    if (result.length >= 3) break;
   }
 
-  // ترتيب: موبايل أولاً
   result.sort((a, b) => (b.isMobile ? 1 : 0) - (a.isMobile ? 1 : 0));
-
   return result;
 }
 
 /* ============================================
    🌐 متغيرات عامة
    ============================================ */
-let allDoctors = [];
+let allItems = [];
 const searchInput = document.getElementById('search');
+const typeSelect = document.getElementById('type');
 const specialtySelect = document.getElementById('specialty');
 const areaSelect = document.getElementById('area');
 const applyBtn = document.getElementById('applyBtn');
@@ -339,28 +342,36 @@ const countEl = document.getElementById('count');
 /* ============================================
    📥 تحميل البيانات
    ============================================ */
-async function loadDoctors() {
+async function loadData() {
   try {
     const res = await fetch('doctors.json');
     if (!res.ok) throw new Error('فشل تحميل الملف');
-    allDoctors = await res.json();
+    allItems = await res.json();
     fillSelects();
-    renderDoctors(allDoctors);
+    renderItems(allItems);
   } catch (err) {
-    doctorsContainer.innerHTML = '<div class="empty">⚠️ تعذّر تحميل بيانات الأطباء</div>';
+    doctorsContainer.innerHTML = '<div class="empty">⚠️ تعذّر تحميل البيانات</div>';
     console.error(err);
   }
 }
 
 /* ============================================
-   🔽 تعبئة القوائم المنسدلة
+   🔽 تعبئة القوائم
    ============================================ */
 function fillSelects() {
-  const specialties = [...new Set(allDoctors.map(d => d.specialty).filter(Boolean))].sort();
-  const areas = [...new Set(allDoctors.map(d => d.area).filter(Boolean))].sort();
+  const types = [...new Set(allItems.map(i => i.type).filter(Boolean))].sort();
+  const specialties = [...new Set(allItems.map(i => i.specialty).filter(Boolean))].sort();
+  const areas = [...new Set(allItems.map(i => i.area).filter(Boolean))].sort();
 
+  typeSelect.innerHTML = '<option value="">كل الأنواع</option>';
   specialtySelect.innerHTML = '<option value="">كل التخصصات</option>';
   areaSelect.innerHTML = '<option value="">كل المناطق</option>';
+
+  types.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    typeSelect.appendChild(opt);
+  });
 
   specialties.forEach(s => {
     const opt = document.createElement('option');
@@ -376,9 +387,9 @@ function fillSelects() {
 }
 
 /* ============================================
-   🎴 عرض الأطباء
+   🎴 عرض العناصر
    ============================================ */
-function renderDoctors(list) {
+function renderItems(list) {
   if (list.length === 0) {
     doctorsContainer.innerHTML = '<div class="empty">😕 لا توجد نتائج مطابقة</div>';
     countEl.textContent = '';
@@ -407,12 +418,13 @@ function renderDoctors(list) {
     ` : '';
 
     return `
-      <div class="card">
+      <div class="card" data-type="${d.type || ''}">
         <h3>${d.name || ''}</h3>
-        ${d.specialty ? `<span class="badge">${d.specialty}</span>` : ''}
+        ${d.type ? `<span class="badge badge-type">${d.type}</span>` : ''}
+        ${d.specialty ? `<span class="badge badge-specialty">${d.specialty}</span>` : ''}
         ${d.area ? `<span class="badge">${d.area}</span>` : ''}
         ${d.address ? `<p><strong>📍 العنوان:</strong> ${d.address}</p>` : ''}
-        ${d.hospital ? `<p><strong>🏥 المستشفى:</strong> ${d.hospital}</p>` : ''}
+        ${d.city ? `<p><strong>🌆 المنطقة:</strong> ${d.city}</p>` : ''}
         ${d.hours ? `<p><strong>🕐 أوقات العمل:</strong> ${d.hours}</p>` : ''}
         ${phonesHTML}
       </div>
@@ -423,35 +435,41 @@ function renderDoctors(list) {
 /* ============================================
    🔍 الفلترة
    ============================================ */
-function filterDoctors() {
+function filterItems() {
   const q = searchInput.value.trim().toLowerCase();
+  const t = typeSelect.value;
   const sp = specialtySelect.value;
   const ar = areaSelect.value;
 
-  const filtered = allDoctors.filter(d => {
+  const filtered = allItems.filter(d => {
     const matchSearch = !q ||
       (d.name || '').toLowerCase().includes(q) ||
       (d.specialty || '').toLowerCase().includes(q) ||
-      (d.area || '').toLowerCase().includes(q);
+      (d.area || '').toLowerCase().includes(q) ||
+      (d.address || '').toLowerCase().includes(q) ||
+      (d.type || '').toLowerCase().includes(q);
+    const matchType = !t || d.type === t;
     const matchSp = !sp || d.specialty === sp;
     const matchAr = !ar || d.area === ar;
-    return matchSearch && matchSp && matchAr;
+    return matchSearch && matchType && matchSp && matchAr;
   });
 
-  renderDoctors(filtered);
+  renderItems(filtered);
 }
 
 function resetFilters() {
   searchInput.value = '';
+  typeSelect.value = '';
   specialtySelect.value = '';
   areaSelect.value = '';
-  renderDoctors(allDoctors);
+  renderItems(allItems);
 }
 
-searchInput.addEventListener('input', filterDoctors);
-specialtySelect.addEventListener('change', filterDoctors);
-areaSelect.addEventListener('change', filterDoctors);
-applyBtn.addEventListener('click', filterDoctors);
+searchInput.addEventListener('input', filterItems);
+typeSelect.addEventListener('change', filterItems);
+specialtySelect.addEventListener('change', filterItems);
+areaSelect.addEventListener('change', filterItems);
+applyBtn.addEventListener('click', filterItems);
 resetBtn.addEventListener('click', resetFilters);
 
 /* ============================================
@@ -482,7 +500,7 @@ window.addEventListener('appinstalled', () => {
 });
 
 /* ▶️ التشغيل */
-loadDoctors();
+loadData();
 </script>
 
 </body>
