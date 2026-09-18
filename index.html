@@ -79,6 +79,11 @@
     border-color: #0d6efd;
   }
 
+  /* 🆕 إخفاء فلتر التخصص عندما لا ينطبق */
+  .hidden {
+    display: none !important;
+  }
+
   .filter-actions { display: flex; gap: 8px; }
 
   .filter-actions button {
@@ -112,7 +117,6 @@
     border-right: 4px solid #0d6efd;
   }
 
-  /* 🆕 ألوان حسب النوع */
   .card[data-type="مشفى"] { border-right-color: #dc3545; }
   .card[data-type="طبيب"] { border-right-color: #0d6efd; }
   .card[data-type="صيدلية"] { border-right-color: #198754; }
@@ -140,15 +144,8 @@
     margin-bottom: 8px;
   }
 
-  .badge-type {
-    background: #fff3cd;
-    color: #664d03;
-  }
-
-  .badge-specialty {
-    background: #d1e7dd;
-    color: #0f5132;
-  }
+  .badge-type { background: #fff3cd; color: #664d03; }
+  .badge-specialty { background: #d1e7dd; color: #0f5132; }
 
   .card p {
     font-size: 0.95rem;
@@ -178,9 +175,7 @@
     margin-bottom: 6px;
   }
 
-  .phone-row.single {
-    grid-template-columns: 1fr;
-  }
+  .phone-row.single { grid-template-columns: 1fr; }
 
   .phone-btn {
     display: flex;
@@ -246,6 +241,7 @@
     <option value="">كل الأنواع</option>
   </select>
 
+  <!-- 🆕 فلتر التخصص — يظهر فقط عندما يكون النوع "الكل" أو "طبيب" -->
   <select id="specialty">
     <option value="">كل التخصصات</option>
   </select>
@@ -272,7 +268,7 @@
 
 <script>
 /* ============================================
-   📞 دالة تنسيق الأرقام
+   📞 تنسيق الأرقام
    ============================================ */
 function formatPhone(raw) {
   let p = String(raw).trim().replace(/[^0-9+]/g, '');
@@ -280,7 +276,6 @@ function formatPhone(raw) {
 
   if (p.startsWith('+963')) p = p.substring(4);
   else if (p.startsWith('963')) p = p.substring(3);
-
   if (p.startsWith('0')) p = p.substring(1);
 
   let phone = '';
@@ -288,14 +283,11 @@ function formatPhone(raw) {
   const len = p.length;
 
   if (p.startsWith('9') && len === 9) {
-    phone = '0' + p;
-    isMobile = true;
+    phone = '0' + p; isMobile = true;
   } else if (p.startsWith('21') && (len === 8 || len === 9)) {
-    phone = '0' + p;
-    isMobile = false;
+    phone = '0' + p; isMobile = false;
   } else if (p.startsWith('2') && (len === 7 || len === 8)) {
-    phone = '021' + p;
-    isMobile = false;
+    phone = '021' + p; isMobile = false;
   } else {
     phone = p.startsWith('0') ? p : '0' + p;
     isMobile = phone.startsWith('09');
@@ -327,7 +319,7 @@ function parsePhones(rawPhones) {
 }
 
 /* ============================================
-   🌐 متغيرات عامة
+   🌐 متغيرات
    ============================================ */
 let allItems = [];
 const searchInput = document.getElementById('search');
@@ -348,6 +340,7 @@ async function loadData() {
     if (!res.ok) throw new Error('فشل تحميل الملف');
     allItems = await res.json();
     fillSelects();
+    updateSpecialtyVisibility();
     renderItems(allItems);
   } catch (err) {
     doctorsContainer.innerHTML = '<div class="empty">⚠️ تعذّر تحميل البيانات</div>';
@@ -384,6 +377,23 @@ function fillSelects() {
     opt.value = a; opt.textContent = a;
     areaSelect.appendChild(opt);
   });
+}
+
+/* ============================================
+   🆕 إظهار/إخفاء فلتر التخصص
+   ============================================ */
+function updateSpecialtyVisibility() {
+  const selectedType = typeSelect.value;
+
+  // التخصص يظهر فقط إذا كان النوع فارغاً (الكل) أو "طبيب"
+  const shouldShowSpecialty = !selectedType || selectedType === 'طبيب';
+
+  if (shouldShowSpecialty) {
+    specialtySelect.classList.remove('hidden');
+  } else {
+    specialtySelect.classList.add('hidden');
+    specialtySelect.value = ''; // 🆕 تصفير التخصص تلقائياً
+  }
 }
 
 /* ============================================
@@ -462,13 +472,23 @@ function resetFilters() {
   typeSelect.value = '';
   specialtySelect.value = '';
   areaSelect.value = '';
+  updateSpecialtyVisibility();
   renderItems(allItems);
 }
 
+/* ============================================
+   🎯 ربط الأحداث
+   ============================================ */
 searchInput.addEventListener('input', filterItems);
-typeSelect.addEventListener('change', filterItems);
-specialtySelect.addEventListener('change', filterItems);
 areaSelect.addEventListener('change', filterItems);
+specialtySelect.addEventListener('change', filterItems);
+
+// 🆕 عند تغيير النوع: نحدّث ظهور التخصص + نفلتر
+typeSelect.addEventListener('change', () => {
+  updateSpecialtyVisibility();
+  filterItems();
+});
+
 applyBtn.addEventListener('click', filterItems);
 resetBtn.addEventListener('click', resetFilters);
 
