@@ -5,16 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>طبيبي في حلب</title>
 
-<!-- 🎨 أيقونات التطبيق ورابط المانيفست -->
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-
-<!-- 🎨 لون شريط المتصفح على الأندرويد -->
 <meta name="theme-color" content="#0d6efd">
-
-<!-- 📱 دعم شاشة الآيفون -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="طبيبي">
@@ -42,7 +37,6 @@
   header h1 { font-size: 1.8rem; margin-bottom: 6px; }
   header p { font-size: 0.95rem; opacity: 0.9; }
 
-  /* زر التثبيت */
   #installButton {
     display: none;
     width: 100%;
@@ -88,6 +82,36 @@
     outline: none;
     border-color: #0d6efd;
   }
+
+  /* 🆕 أزرار الفلترة */
+  .filter-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .filter-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  .btn-apply {
+    background: #0d6efd;
+    color: white;
+  }
+  .btn-apply:hover { background: #0a58ca; }
+
+  .btn-reset {
+    background: #e9ecef;
+    color: #495057;
+  }
+  .btn-reset:hover { background: #dee2e6; }
 
   .count {
     text-align: center;
@@ -185,7 +209,6 @@
   <p>ابحث عن الطبيب المناسب حسب التخصص والمنطقة</p>
 </header>
 
-<!-- 📲 زر التثبيت (يظهر تلقائياً عند جهوزية التطبيق) -->
 <button id="installButton">📲 تثبيت التطبيق على الموبايل</button>
 
 <div class="filters">
@@ -198,6 +221,12 @@
   <select id="area">
     <option value="">كل المناطق</option>
   </select>
+
+  <!-- 🆕 أزرار الفلترة -->
+  <div class="filter-actions">
+    <button id="applyBtn" class="btn-apply">🔎 تطبيق الفلتر</button>
+    <button id="resetBtn" class="btn-reset">✖️ مسح</button>
+  </div>
 </div>
 
 <div class="count" id="count"></div>
@@ -271,11 +300,13 @@ const doctors = [
 ];
 
 /* ============================================
-   ⚙️ المنطق — لا تحتاج تعديله
+   ⚙️ المنطق
    ============================================ */
 const searchInput = document.getElementById('search');
 const specialtySelect = document.getElementById('specialty');
 const areaSelect = document.getElementById('area');
+const applyBtn = document.getElementById('applyBtn');
+const resetBtn = document.getElementById('resetBtn');
 const doctorsContainer = document.getElementById('doctors');
 const countEl = document.getElementById('count');
 
@@ -339,12 +370,24 @@ function filterDoctors() {
   renderDoctors(filtered);
 }
 
+function resetFilters() {
+  searchInput.value = '';
+  specialtySelect.value = '';
+  areaSelect.value = '';
+  renderDoctors(doctors);
+}
+
+/* 🆕 الفلترة التلقائية (تعمل في Chrome) */
 searchInput.addEventListener('input', filterDoctors);
 specialtySelect.addEventListener('change', filterDoctors);
 areaSelect.addEventListener('change', filterDoctors);
 
+/* 🆕 الفلترة بزر (احتياط) */
+applyBtn.addEventListener('click', filterDoctors);
+resetBtn.addEventListener('click', resetFilters);
+
 /* ============================================
-   📲 كود تفعيل زر التثبيت (PWA)
+   📲 زر التثبيت
    ============================================ */
 let deferredPrompt;
 const installButton = document.getElementById('installButton');
@@ -367,18 +410,15 @@ installButton.addEventListener('click', async () => {
   installButton.style.display = 'none';
 });
 
-// إخفاء الزر إذا كان التطبيق مثبتاً مسبقاً
 window.addEventListener('appinstalled', () => {
   installButton.style.display = 'none';
   console.log('✅ تم تثبيت التطبيق');
 });
 
-/* ============================================
-   ▶️ التشغيل
-   ============================================ */
+/* ▶️ التشغيل */
 fillSelects();
 renderDoctors(doctors);
 </script>
 
 </body>
-   </html>
+ </html>
