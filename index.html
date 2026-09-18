@@ -11,7 +11,6 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0d6efd">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="طبيبي">
 
 <style>
@@ -51,10 +50,7 @@
     cursor: pointer;
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(25,135,84,0.3);
-    transition: 0.2s;
   }
-
-  #installButton:hover { background: #157347; }
 
   .filters {
     background: white;
@@ -83,11 +79,7 @@
     border-color: #0d6efd;
   }
 
-  /* 🆕 أزرار الفلترة */
-  .filter-actions {
-    display: flex;
-    gap: 8px;
-  }
+  .filter-actions { display: flex; gap: 8px; }
 
   .filter-actions button {
     flex: 1;
@@ -98,20 +90,10 @@
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: 0.15s;
   }
 
-  .btn-apply {
-    background: #0d6efd;
-    color: white;
-  }
-  .btn-apply:hover { background: #0a58ca; }
-
-  .btn-reset {
-    background: #e9ecef;
-    color: #495057;
-  }
-  .btn-reset:hover { background: #dee2e6; }
+  .btn-apply { background: #0d6efd; color: white; }
+  .btn-reset { background: #e9ecef; color: #495057; }
 
   .count {
     text-align: center;
@@ -120,20 +102,14 @@
     margin-bottom: 12px;
   }
 
-  .doctors {
-    display: grid;
-    gap: 14px;
-  }
+  .doctors { display: grid; gap: 14px; }
 
   .card {
     background: white;
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    transition: transform 0.15s;
   }
-
-  .card:hover { transform: translateY(-2px); }
 
   .card h3 {
     color: #0d6efd;
@@ -160,30 +136,55 @@
 
   .card p strong { color: #1a2b3c; }
 
-  .actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  /* 🆕 قسم الأرقام */
+  .phones-section {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #e1e5ea;
   }
 
-  .btn {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
+  .phones-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .phone-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .phone-row.single {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
     border-radius: 8px;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     transition: 0.15s;
     border: none;
     cursor: pointer;
     font-family: inherit;
+    direction: ltr;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+
+  .phone-btn:hover { opacity: 0.9; }
 
   .btn-call { background: #0d6efd; color: white; }
   .btn-wa { background: #25D366; color: white; }
-  .btn:hover { opacity: 0.9; }
 
   .empty {
     text-align: center;
@@ -191,6 +192,12 @@
     color: #6c757d;
     background: white;
     border-radius: 12px;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
   }
 
   footer {
@@ -222,7 +229,6 @@
     <option value="">كل المناطق</option>
   </select>
 
-  <!-- 🆕 أزرار الفلترة -->
   <div class="filter-actions">
     <button id="applyBtn" class="btn-apply">🔎 تطبيق الفلتر</button>
     <button id="resetBtn" class="btn-reset">✖️ مسح</button>
@@ -230,8 +236,9 @@
 </div>
 
 <div class="count" id="count"></div>
-
-<div class="doctors" id="doctors"></div>
+<div class="doctors" id="doctors">
+  <div class="loading">⏳ جاري تحميل بيانات الأطباء...</div>
+</div>
 
 <footer>
   البيانات لأغراض إرشادية فقط — يُرجى التأكد عند الاتصال.<br>
@@ -240,68 +247,87 @@
 
 <script>
 /* ============================================
-   📋 البيانات — استبدلها ببياناتك الحقيقية
+   📞 دالة تنسيق الأرقام
    ============================================ */
-const doctors = [
-  {
-    name: "د. أحمد الخليل",
-    specialty: "قلبية",
-    area: "الحمدانية",
-    address: "شارع الجلاء، بناء النور، ط2",
-    phone: "0912345678",
-    hours: "9ص - 2م / 5م - 8م",
-    hospital: "مشفى الرازي"
-  },
-  {
-    name: "د. سمر العلي",
-    specialty: "أطفال",
-    area: "الفرقان",
-    address: "شارع بارون، مقابل حديقة الأطفال",
-    phone: "0923456789",
-    hours: "10ص - 1م",
-    hospital: "عيادة خاصة"
-  },
-  {
-    name: "د. محمد الحسن",
-    specialty: "جلدية",
-    area: "السبيل",
-    address: "شارع النيل، بناء الأمل، ط1",
-    phone: "0934567890",
-    hours: "4م - 9م",
-    hospital: "مشفى الشهباء"
-  },
-  {
-    name: "د. ريم قاسم",
-    specialty: "نسائية",
-    area: "الحمدانية",
-    address: "شارع الجامعة، بناء السلام",
-    phone: "0945678901",
-    hours: "9ص - 3م",
-    hospital: "مشفى الكندي"
-  },
-  {
-    name: "د. خالد منصور",
-    specialty: "عيون",
-    area: "الميدان",
-    address: "شارع الميدان الرئيسي",
-    phone: "0956789012",
-    hours: "11ص - 6م",
-    hospital: "عيادة خاصة"
-  },
-  {
-    name: "د. ليلى إبراهيم",
-    specialty: "باطنية",
-    area: "الفرقان",
-    address: "شارع تشرين، بناء الياسمين",
-    phone: "0967890123",
-    hours: "9ص - 2م / 6م - 9م",
-    hospital: "مشفى الرازي"
+function formatPhone(raw) {
+  // 1. تنظيف من أي رموز
+  let p = String(raw).trim().replace(/[^0-9+]/g, '');
+  if (!p) return null;
+
+  // 2. إزالة رمز سوريا الدولي إن وُجد
+  if (p.startsWith('+963')) p = p.substring(4);
+  else if (p.startsWith('963')) p = p.substring(3);
+
+  // 3. إزالة الصفر إن وُجد
+  if (p.startsWith('0')) p = p.substring(1);
+
+  // 4. تحديد النوع وإضافة الصفر أو 021
+  let phone = '';
+  let isMobile = false;
+
+  const len = p.length;
+
+  if (p.startsWith('9') && len === 9) {
+    // موبايل: 9xxxxxxxx → 09xxxxxxxx
+    phone = '0' + p;
+    isMobile = true;
+  } else if (p.startsWith('21') && (len === 8 || len === 9)) {
+    // أرضي حلب: 21xxxxxxx → 021xxxxxxx
+    phone = '0' + p;
+    isMobile = false;
+  } else if (p.startsWith('2') && (len === 7 || len === 8)) {
+    // أرضي حلب بدون 21: 2xxxxxx → 0212xxxxxx
+    phone = '021' + p;
+    isMobile = false;
+  } else {
+    // حالات غير متوقعة — نتركها كما هي مع صفر
+    phone = p.startsWith('0') ? p : '0' + p;
+    isMobile = phone.startsWith('09');
   }
-];
+
+  // 5. صيغة الواتساب
+  const whatsapp = isMobile ? ('963' + phone.substring(1)) : null;
+
+  return { phone, whatsapp, isMobile };
+}
 
 /* ============================================
-   ⚙️ المنطق
+   📋 تحليل حقل phones
    ============================================ */
+function parsePhones(rawPhones) {
+  if (!rawPhones) return [];
+
+  // تقسيم حسب أي فاصل: ; ؛ , \
+  const parts = String(rawPhones).split(/[;؛,\\]+/);
+
+  const result = [];
+  const seen = new Set();
+
+  for (let part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+
+    const formatted = formatPhone(trimmed);
+    if (!formatted) continue;
+
+    // منع التكرار
+    if (seen.has(formatted.phone)) continue;
+    seen.add(formatted.phone);
+
+    result.push(formatted);
+    if (result.length >= 3) break; // حد أقصى 3
+  }
+
+  // ترتيب: موبايل أولاً
+  result.sort((a, b) => (b.isMobile ? 1 : 0) - (a.isMobile ? 1 : 0));
+
+  return result;
+}
+
+/* ============================================
+   🌐 متغيرات عامة
+   ============================================ */
+let allDoctors = [];
 const searchInput = document.getElementById('search');
 const specialtySelect = document.getElementById('specialty');
 const areaSelect = document.getElementById('area');
@@ -310,9 +336,31 @@ const resetBtn = document.getElementById('resetBtn');
 const doctorsContainer = document.getElementById('doctors');
 const countEl = document.getElementById('count');
 
+/* ============================================
+   📥 تحميل البيانات
+   ============================================ */
+async function loadDoctors() {
+  try {
+    const res = await fetch('doctors.json');
+    if (!res.ok) throw new Error('فشل تحميل الملف');
+    allDoctors = await res.json();
+    fillSelects();
+    renderDoctors(allDoctors);
+  } catch (err) {
+    doctorsContainer.innerHTML = '<div class="empty">⚠️ تعذّر تحميل بيانات الأطباء</div>';
+    console.error(err);
+  }
+}
+
+/* ============================================
+   🔽 تعبئة القوائم المنسدلة
+   ============================================ */
 function fillSelects() {
-  const specialties = [...new Set(doctors.map(d => d.specialty))].sort();
-  const areas = [...new Set(doctors.map(d => d.area))].sort();
+  const specialties = [...new Set(allDoctors.map(d => d.specialty).filter(Boolean))].sort();
+  const areas = [...new Set(allDoctors.map(d => d.area).filter(Boolean))].sort();
+
+  specialtySelect.innerHTML = '<option value="">كل التخصصات</option>';
+  areaSelect.innerHTML = '<option value="">كل المناطق</option>';
 
   specialties.forEach(s => {
     const opt = document.createElement('option');
@@ -327,6 +375,9 @@ function fillSelects() {
   });
 }
 
+/* ============================================
+   🎴 عرض الأطباء
+   ============================================ */
 function renderDoctors(list) {
   if (list.length === 0) {
     doctorsContainer.innerHTML = '<div class="empty">😕 لا توجد نتائج مطابقة</div>';
@@ -336,32 +387,52 @@ function renderDoctors(list) {
 
   countEl.textContent = `عدد النتائج: ${list.length}`;
 
-  doctorsContainer.innerHTML = list.map(d => `
-    <div class="card">
-      <h3>${d.name}</h3>
-      <span class="badge">${d.specialty}</span>
-      <span class="badge">${d.area}</span>
-      <p><strong>📍 العنوان:</strong> ${d.address}</p>
-      <p><strong>🏥 المستشفى:</strong> ${d.hospital}</p>
-      <p><strong>🕐 أوقات العمل:</strong> ${d.hours}</p>
-      <div class="actions">
-        <a href="tel:${d.phone}" class="btn btn-call">📞 اتصال</a>
-        <a href="https://wa.me/963${d.phone.slice(1)}" target="_blank" class="btn btn-wa">💬 واتساب</a>
+  doctorsContainer.innerHTML = list.map(d => {
+    const phones = parsePhones(d.phones);
+
+    const phonesHTML = phones.length > 0 ? `
+      <div class="phones-section">
+        <div class="phones-label">📱 أرقام التواصل:</div>
+        ${phones.map(p => p.isMobile ? `
+          <div class="phone-row">
+            <a href="tel:${p.phone}" class="phone-btn btn-call">📞 ${p.phone}</a>
+            <a href="https://wa.me/${p.whatsapp}" target="_blank" class="phone-btn btn-wa">💬 واتساب</a>
+          </div>
+        ` : `
+          <div class="phone-row single">
+            <a href="tel:${p.phone}" class="phone-btn btn-call">📞 ${p.phone}</a>
+          </div>
+        `).join('')}
       </div>
-    </div>
-  `).join('');
+    ` : '';
+
+    return `
+      <div class="card">
+        <h3>${d.name || ''}</h3>
+        ${d.specialty ? `<span class="badge">${d.specialty}</span>` : ''}
+        ${d.area ? `<span class="badge">${d.area}</span>` : ''}
+        ${d.address ? `<p><strong>📍 العنوان:</strong> ${d.address}</p>` : ''}
+        ${d.hospital ? `<p><strong>🏥 المستشفى:</strong> ${d.hospital}</p>` : ''}
+        ${d.hours ? `<p><strong>🕐 أوقات العمل:</strong> ${d.hours}</p>` : ''}
+        ${phonesHTML}
+      </div>
+    `;
+  }).join('');
 }
 
+/* ============================================
+   🔍 الفلترة
+   ============================================ */
 function filterDoctors() {
   const q = searchInput.value.trim().toLowerCase();
   const sp = specialtySelect.value;
   const ar = areaSelect.value;
 
-  const filtered = doctors.filter(d => {
+  const filtered = allDoctors.filter(d => {
     const matchSearch = !q ||
-      d.name.toLowerCase().includes(q) ||
-      d.specialty.toLowerCase().includes(q) ||
-      d.area.toLowerCase().includes(q);
+      (d.name || '').toLowerCase().includes(q) ||
+      (d.specialty || '').toLowerCase().includes(q) ||
+      (d.area || '').toLowerCase().includes(q);
     const matchSp = !sp || d.specialty === sp;
     const matchAr = !ar || d.area === ar;
     return matchSearch && matchSp && matchAr;
@@ -374,15 +445,12 @@ function resetFilters() {
   searchInput.value = '';
   specialtySelect.value = '';
   areaSelect.value = '';
-  renderDoctors(doctors);
+  renderDoctors(allDoctors);
 }
 
-/* 🆕 الفلترة التلقائية (تعمل في Chrome) */
 searchInput.addEventListener('input', filterDoctors);
 specialtySelect.addEventListener('change', filterDoctors);
 areaSelect.addEventListener('change', filterDoctors);
-
-/* 🆕 الفلترة بزر (احتياط) */
 applyBtn.addEventListener('click', filterDoctors);
 resetBtn.addEventListener('click', resetFilters);
 
@@ -404,20 +472,17 @@ installButton.addEventListener('click', async () => {
     return;
   }
   deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  console.log(`اختيار المستخدم: ${outcome}`);
+  await deferredPrompt.userChoice;
   deferredPrompt = null;
   installButton.style.display = 'none';
 });
 
 window.addEventListener('appinstalled', () => {
   installButton.style.display = 'none';
-  console.log('✅ تم تثبيت التطبيق');
 });
 
 /* ▶️ التشغيل */
-fillSelects();
-renderDoctors(doctors);
+loadDoctors();
 </script>
 
 </body>
