@@ -1,0 +1,322 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طبيبي في حلب</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #f4f7fa;
+    color: #1a2b3c;
+    padding: 16px;
+    line-height: 1.6;
+  }
+
+  header {
+    text-align: center;
+    padding: 24px 16px;
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: white;
+    border-radius: 16px;
+    margin-bottom: 20px;
+  }
+
+  header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+  header p { font-size: 0.95rem; opacity: 0.9; }
+
+  .filters {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: grid;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .filters input:focus,
+  .filters select:focus {
+    outline: none;
+    border-color: #0d6efd;
+  }
+
+  .count {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+
+  .doctors {
+    display: grid;
+    gap: 14px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.15s;
+  }
+
+  .card:hover { transform: translateY(-2px); }
+
+  .card h3 {
+    color: #0d6efd;
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: #e7f1ff;
+    color: #0a58ca;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-left: 6px;
+    margin-bottom: 8px;
+  }
+
+  .card p {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    color: #495057;
+  }
+
+  .card p strong { color: #1a2b3c; }
+
+  .actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: 0.15s;
+  }
+
+  .btn-call {
+    background: #0d6efd;
+    color: white;
+  }
+
+  .btn-wa {
+    background: #25D366;
+    color: white;
+  }
+
+  .btn:hover { opacity: 0.9; }
+
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    background: white;
+    border-radius: 12px;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 30px;
+    padding: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🩺 طبيبي في حلب</h1>
+  <p>ابحث عن الطبيب المناسب حسب التخصص والمنطقة</p>
+</header>
+
+<div class="filters">
+  <input type="text" id="search" placeholder="🔍 ابحث بالاسم أو التخصص أو المنطقة...">
+  
+  <select id="specialty">
+    <option value="">كل التخصصات</option>
+  </select>
+
+  <select id="area">
+    <option value="">كل المناطق</option>
+  </select>
+</div>
+
+<div class="count" id="count"></div>
+
+<div class="doctors" id="doctors"></div>
+
+<footer>
+  البيانات لأغراض إرشادية فقط — يُرجى التأكد عند الاتصال.<br>
+  © 2026 طبيبي في حلب
+</footer>
+
+<script>
+/* ============================================
+   📋 البيانات — استبدلها ببياناتك
+   ============================================ */
+const doctors = [
+  {
+    name: "د. أحمد الخليل",
+    specialty: "قلبية",
+    area: "الحمدانية",
+    address: "شارع الجلاء، بناء النور، ط2",
+    phone: "0912345678",
+    hours: "9ص - 2م / 5م - 8م",
+    hospital: "مشفى الرازي"
+  },
+  {
+    name: "د. سمر العلي",
+    specialty: "أطفال",
+    area: "الفرقان",
+    address: "شارع بارون، مقابل حديقة الأطفال",
+    phone: "0923456789",
+    hours: "10ص - 1م",
+    hospital: "عيادة خاصة"
+  },
+  {
+    name: "د. محمد الحسن",
+    specialty: "جلدية",
+    area: "السبيل",
+    address: "شارع النيل، بناء الأمل، ط1",
+    phone: "0934567890",
+    hours: "4م - 9م",
+    hospital: "مشفى الشهباء"
+  },
+  {
+    name: "د. ريم قاسم",
+    specialty: "نسائية",
+    area: "الحمدانية",
+    address: "شارع الجامعة، بناء السلام",
+    phone: "0945678901",
+    hours: "9ص - 3م",
+    hospital: "مشفى الكندي"
+  },
+  {
+    name: "د. خالد منصور",
+    specialty: "عيون",
+    area: "الميدان",
+    address: "شارع الميدان الرئيسي",
+    phone: "0956789012",
+    hours: "11ص - 6م",
+    hospital: "عيادة خاصة"
+  },
+  {
+    name: "د. ليلى إبراهيم",
+    specialty: "باطنية",
+    area: "الفرقان",
+    address: "شارع تشرين، بناء الياسمين",
+    phone: "0967890123",
+    hours: "9ص - 2م / 6م - 9م",
+    hospital: "مشفى الرازي"
+  }
+];
+
+/* ============================================
+   ⚙️ المنطق — لا تحتاج تعديله
+   ============================================ */
+const searchInput = document.getElementById('search');
+const specialtySelect = document.getElementById('specialty');
+const areaSelect = document.getElementById('area');
+const doctorsContainer = document.getElementById('doctors');
+const countEl = document.getElementById('count');
+
+// تعبئة القوائم المنسدلة تلقائياً
+function fillSelects() {
+  const specialties = [...new Set(doctors.map(d => d.specialty))].sort();
+  const areas = [...new Set(doctors.map(d => d.area))].sort();
+
+  specialties.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    specialtySelect.appendChild(opt);
+  });
+
+  areas.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    areaSelect.appendChild(opt);
+  });
+}
+
+// عرض الأطباء
+function renderDoctors(list) {
+  if (list.length === 0) {
+    doctorsContainer.innerHTML = '<div class="empty">😕 لا توجد نتائج مطابقة</div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  countEl.textContent = `عدد النتائج: ${list.length}`;
+
+  doctorsContainer.innerHTML = list.map(d => `
+    <div class="card">
+      <h3>${d.name}</h3>
+      <span class="badge">${d.specialty}</span>
+      <span class="badge">${d.area}</span>
+      <p><strong>📍 العنوان:</strong> ${d.address}</p>
+      <p><strong>🏥 المستشفى:</strong> ${d.hospital}</p>
+      <p><strong>🕐 أوقات العمل:</strong> ${d.hours}</p>
+      <div class="actions">
+        <a href="tel:${d.phone}" class="btn btn-call">📞 اتصال</a>
+        <a href="https://wa.me/963${d.phone.slice(1)}" target="_blank" class="btn btn-wa">💬 واتساب</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+// الفلترة
+function filterDoctors() {
+  const q = searchInput.value.trim().toLowerCase();
+  const sp = specialtySelect.value;
+  const ar = areaSelect.value;
+
+  const filtered = doctors.filter(d => {
+    const matchSearch = !q ||
+      d.name.toLowerCase().includes(q) ||
+      d.specialty.toLowerCase().includes(q) ||
+      d.area.toLowerCase().includes(q);
+    const matchSp = !sp || d.specialty === sp;
+    const matchAr = !ar || d.area === ar;
+    return matchSearch && matchSp && matchAr;
+  });
+
+  renderDoctors(filtered);
+}
+
+// ربط الأحداث
+searchInput.addEventListener('input', filterDoctors);
+specialtySelect.addEventListener('change', filterDoctors);
+areaSelect.addEventListener('change', filterDoctors);
+
+// التشغيل
+fillSelects();
+renderDoctors(doctors);
+</script>
+
+</body>
+</html>
