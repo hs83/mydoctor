@@ -79,10 +79,7 @@
     border-color: #0d6efd;
   }
 
-  /* 🆕 إخفاء فلتر التخصص عندما لا ينطبق */
-  .hidden {
-    display: none !important;
-  }
+  .hidden { display: none !important; }
 
   .filter-actions { display: flex; gap: 8px; }
 
@@ -202,6 +199,36 @@
   .btn-call { background: #0d6efd; color: white; }
   .btn-wa { background: #25D366; color: white; }
 
+  /* 🆕 زر اقتراح التعديل */
+  .suggest-section {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #e1e5ea;
+    text-align: center;
+  }
+
+  .suggest-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffe69c;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    font-family: inherit;
+    transition: 0.15s;
+    cursor: pointer;
+  }
+
+  .suggest-btn:hover {
+    background: #ffe69c;
+  }
+
   .empty {
     text-align: center;
     padding: 40px;
@@ -241,7 +268,6 @@
     <option value="">كل الأنواع</option>
   </select>
 
-  <!-- 🆕 فلتر التخصص — يظهر فقط عندما يكون النوع "الكل" أو "طبيب" -->
   <select id="specialty">
     <option value="">كل التخصصات</option>
   </select>
@@ -267,6 +293,13 @@
 </footer>
 
 <script>
+/* ============================================
+   ⚙️ إعدادات مهمة — عدّل رقم الواتساب هنا
+   ============================================ */
+const ADMIN_WHATSAPP = "963930783679"; 
+// ⚠️ استبدل XXXXXXXXX برقمك بدون الصفر وبدون +
+// مثال: إذا رقمك 0955123456 → اكتب: 963955123456
+
 /* ============================================
    📞 تنسيق الأرقام
    ============================================ */
@@ -316,6 +349,24 @@ function parsePhones(rawPhones) {
 
   result.sort((a, b) => (b.isMobile ? 1 : 0) - (a.isMobile ? 1 : 0));
   return result;
+}
+
+/* ============================================
+   💬 دالة إنشاء رابط اقتراح التعديل
+   ============================================ */
+function buildSuggestLink(item) {
+  const message = 
+`⚠️ *اقتراح تعديل* على بيانات في دليل حلب الصحي:
+
+📌 *الاسم:* ${item.name || '-'}
+🏷️ *النوع:* ${item.type || '-'}
+📍 *المنطقة:* ${item.area || '-'}
+🏠 *العنوان:* ${item.address || '-'}
+
+✏️ *التعديل المقترح:*
+[اكتب التعديل هنا...]`;
+
+  return `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`;
 }
 
 /* ============================================
@@ -380,19 +431,17 @@ function fillSelects() {
 }
 
 /* ============================================
-   🆕 إظهار/إخفاء فلتر التخصص
+   🎯 إظهار/إخفاء فلتر التخصص
    ============================================ */
 function updateSpecialtyVisibility() {
   const selectedType = typeSelect.value;
-
-  // التخصص يظهر فقط إذا كان النوع فارغاً (الكل) أو "طبيب"
   const shouldShowSpecialty = !selectedType || selectedType === 'طبيب';
 
   if (shouldShowSpecialty) {
     specialtySelect.classList.remove('hidden');
   } else {
     specialtySelect.classList.add('hidden');
-    specialtySelect.value = ''; // 🆕 تصفير التخصص تلقائياً
+    specialtySelect.value = '';
   }
 }
 
@@ -410,6 +459,7 @@ function renderItems(list) {
 
   doctorsContainer.innerHTML = list.map(d => {
     const phones = parsePhones(d.phones);
+    const suggestLink = buildSuggestLink(d);
 
     const phonesHTML = phones.length > 0 ? `
       <div class="phones-section">
@@ -437,6 +487,11 @@ function renderItems(list) {
         ${d.city ? `<p><strong>🌆 المنطقة:</strong> ${d.city}</p>` : ''}
         ${d.hours ? `<p><strong>🕐 أوقات العمل:</strong> ${d.hours}</p>` : ''}
         ${phonesHTML}
+        <div class="suggest-section">
+          <a href="${suggestLink}" target="_blank" class="suggest-btn">
+            ⚠️ هل هذه المعلومة خاطئة؟ اقترح تعديلاً
+          </a>
+        </div>
       </div>
     `;
   }).join('');
@@ -476,14 +531,10 @@ function resetFilters() {
   renderItems(allItems);
 }
 
-/* ============================================
-   🎯 ربط الأحداث
-   ============================================ */
 searchInput.addEventListener('input', filterItems);
 areaSelect.addEventListener('change', filterItems);
 specialtySelect.addEventListener('change', filterItems);
 
-// 🆕 عند تغيير النوع: نحدّث ظهور التخصص + نفلتر
 typeSelect.addEventListener('change', () => {
   updateSpecialtyVisibility();
   filterItems();
