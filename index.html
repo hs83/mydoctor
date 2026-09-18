@@ -1,12 +1,27 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>طبيبي في حلب</title>
+
+<!-- 🎨 أيقونات التطبيق ورابط المانيفست -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- 🎨 لون شريط المتصفح على الأندرويد -->
+<meta name="theme-color" content="#0d6efd">
+
+<!-- 📱 دعم شاشة الآيفون -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="طبيبي">
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
+
   body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     background: #f4f7fa;
@@ -27,6 +42,26 @@
   header h1 { font-size: 1.8rem; margin-bottom: 6px; }
   header p { font-size: 0.95rem; opacity: 0.9; }
 
+  /* زر التثبيت */
+  #installButton {
+    display: none;
+    width: 100%;
+    padding: 14px;
+    background: #198754;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(25,135,84,0.3);
+    transition: 0.2s;
+  }
+
+  #installButton:hover { background: #157347; }
+
   .filters {
     background: white;
     padding: 16px;
@@ -45,6 +80,7 @@
     border-radius: 8px;
     font-size: 1rem;
     font-family: inherit;
+    background: white;
   }
 
   .filters input:focus,
@@ -116,18 +152,13 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition: 0.15s;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
   }
 
-  .btn-call {
-    background: #0d6efd;
-    color: white;
-  }
-
-  .btn-wa {
-    background: #25D366;
-    color: white;
-  }
-
+  .btn-call { background: #0d6efd; color: white; }
+  .btn-wa { background: #25D366; color: white; }
   .btn:hover { opacity: 0.9; }
 
   .empty {
@@ -154,9 +185,12 @@
   <p>ابحث عن الطبيب المناسب حسب التخصص والمنطقة</p>
 </header>
 
+<!-- 📲 زر التثبيت (يظهر تلقائياً عند جهوزية التطبيق) -->
+<button id="installButton">📲 تثبيت التطبيق على الموبايل</button>
+
 <div class="filters">
   <input type="text" id="search" placeholder="🔍 ابحث بالاسم أو التخصص أو المنطقة...">
-  
+
   <select id="specialty">
     <option value="">كل التخصصات</option>
   </select>
@@ -177,7 +211,7 @@
 
 <script>
 /* ============================================
-   📋 البيانات — استبدلها ببياناتك
+   📋 البيانات — استبدلها ببياناتك الحقيقية
    ============================================ */
 const doctors = [
   {
@@ -245,7 +279,6 @@ const areaSelect = document.getElementById('area');
 const doctorsContainer = document.getElementById('doctors');
 const countEl = document.getElementById('count');
 
-// تعبئة القوائم المنسدلة تلقائياً
 function fillSelects() {
   const specialties = [...new Set(doctors.map(d => d.specialty))].sort();
   const areas = [...new Set(doctors.map(d => d.area))].sort();
@@ -263,7 +296,6 @@ function fillSelects() {
   });
 }
 
-// عرض الأطباء
 function renderDoctors(list) {
   if (list.length === 0) {
     doctorsContainer.innerHTML = '<div class="empty">😕 لا توجد نتائج مطابقة</div>';
@@ -289,7 +321,6 @@ function renderDoctors(list) {
   `).join('');
 }
 
-// الفلترة
 function filterDoctors() {
   const q = searchInput.value.trim().toLowerCase();
   const sp = specialtySelect.value;
@@ -308,15 +339,46 @@ function filterDoctors() {
   renderDoctors(filtered);
 }
 
-// ربط الأحداث
 searchInput.addEventListener('input', filterDoctors);
 specialtySelect.addEventListener('change', filterDoctors);
 areaSelect.addEventListener('change', filterDoctors);
 
-// التشغيل
+/* ============================================
+   📲 كود تفعيل زر التثبيت (PWA)
+   ============================================ */
+let deferredPrompt;
+const installButton = document.getElementById('installButton');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installButton.style.display = 'block';
+});
+
+installButton.addEventListener('click', async () => {
+  if (!deferredPrompt) {
+    alert('لتثبيت التطبيق: افتح قائمة المتصفح (⋮) ثم اختر "إضافة إلى الشاشة الرئيسية"');
+    return;
+  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`اختيار المستخدم: ${outcome}`);
+  deferredPrompt = null;
+  installButton.style.display = 'none';
+});
+
+// إخفاء الزر إذا كان التطبيق مثبتاً مسبقاً
+window.addEventListener('appinstalled', () => {
+  installButton.style.display = 'none';
+  console.log('✅ تم تثبيت التطبيق');
+});
+
+/* ============================================
+   ▶️ التشغيل
+   ============================================ */
 fillSelects();
 renderDoctors(doctors);
 </script>
 
 </body>
-</html>
+   </html>
