@@ -54,12 +54,6 @@
     color: white;
   }
 
-  .visit-counter img {
-    height: 22px;
-    filter: brightness(0) invert(1);
-    vertical-align: middle;
-  }
-
   #installButton {
     display: none;
     width: 100%;
@@ -316,9 +310,7 @@
   <p>ابحث عن طبيب، مشفى، صيدلية، مختبر، أو مركز أشعة</p>
   <div class="visit-counter">
     <span>👁️</span>
-    <img src="https://hs83.goatcounter.com/count.svg?path=" 
-         alt="عدد الزوار"
-         onerror="this.parentElement.style.display='none'">
+    <span id="visitorCount">جاري التحميل...</span>
   </div>
 </header>
 
@@ -361,7 +353,7 @@
 /* ============================================
    ⚙️ إعدادات مهمة
    ============================================ */
-const ADMIN_WHATSAPP = "963XXXXXXXXX";
+const ADMIN_WHATSAPP = "963967571463";
 // ⚠️ استبدل XXXXXXXXX برقمك بدون الصفر وبدون +
 
 /* ============================================
@@ -374,6 +366,30 @@ function trackEvent(path, title) {
       title: title || path,
       event: true
     });
+  }
+}
+
+/* ============================================
+   👁️ عداد الزوار عبر API
+   ============================================ */
+async function loadVisitorCount() {
+  const countEl = document.getElementById('visitorCount');
+  if (!countEl) return;
+
+  try {
+    // جلب إجمالي الزوار عبر API GoatCounter
+    const response = await fetch('https://hs83.goatcounter.com/counter/TOTAL.json');
+    if (!response.ok) throw new Error('API error');
+
+    const data = await response.json();
+    if (data && data.count_unique) {
+      countEl.textContent = data.count_unique.toLocaleString('ar-EG') + ' زائر';
+    } else {
+      countEl.textContent = 'غير متاح';
+    }
+  } catch (err) {
+    console.error('فشل جلب عدد الزوار:', err);
+    countEl.textContent = 'غير متاح';
   }
 }
 
@@ -724,6 +740,7 @@ window.addEventListener('appinstalled', () => {
 
 /* ▶️ التشغيل */
 loadData();
+loadVisitorCount();
 </script>
 
 </body>
