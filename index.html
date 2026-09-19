@@ -13,6 +13,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="دليل حلب الصحي">
 
+<!-- 📊 GoatCounter Analytics -->
+<script data-goatcounter="https://hs83.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,6 +39,19 @@
 
   header h1 { font-size: 1.8rem; margin-bottom: 6px; }
   header p { font-size: 0.95rem; opacity: 0.9; }
+
+  /* 🆕 عداد الزيارات */
+  .visit-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
 
   #installButton {
     display: none;
@@ -199,7 +216,6 @@
   .btn-call { background: #0d6efd; color: white; }
   .btn-wa { background: #25D366; color: white; }
 
-  /* 🆕 قسم الأزرار السفلية */
   .card-actions {
     margin-top: 12px;
     padding-top: 10px;
@@ -241,7 +257,6 @@
   }
   .btn-suggest:hover { background: #ffe69c; }
 
-  /* 🆕 تنبيه النسخ */
   .toast {
     position: fixed;
     bottom: 30px;
@@ -292,6 +307,10 @@
 <header>
   <h1>🏥 دليل حلب الصحي</h1>
   <p>ابحث عن طبيب، مشفى، صيدلية، مختبر، أو مركز أشعة</p>
+  <div class="visit-counter" id="visitCounter">
+    <span>👁️</span>
+    <span>جاري التحميل...</span>
+  </div>
 </header>
 
 <button id="installButton">📲 تثبيت التطبيق على الموبايل</button>
@@ -327,15 +346,27 @@
   © 2026 دليل حلب الصحي
 </footer>
 
-<!-- 🆕 تنبيه النسخ -->
 <div class="toast" id="toast">✅ تم النسخ</div>
 
 <script>
 /* ============================================
-   ⚙️ إعدادات مهمة — عدّل رقم الواتساب هنا
+   ⚙️ إعدادات مهمة
    ============================================ */
-const ADMIN_WHATSAPP = "963930783679";
+const ADMIN_WHATSAPP = "963XXXXXXXXX";
 // ⚠️ استبدل XXXXXXXXX برقمك بدون الصفر وبدون +
+
+/* ============================================
+   📊 دالة تتبع GoatCounter
+   ============================================ */
+function trackEvent(path, title) {
+  if (window.goatcounter && window.goatcounter.count) {
+    window.goatcounter.count({
+      path: path,
+      title: title || path,
+      event: true
+    });
+  }
+}
 
 /* ============================================
    📞 تنسيق الأرقام
@@ -407,7 +438,7 @@ function buildSuggestLink(item) {
 }
 
 /* ============================================
-   📋 دالة نسخ البيانات
+   📋 نسخ البيانات
    ============================================ */
 function buildCopyText(item) {
   const phones = parsePhones(item.phones);
@@ -423,18 +454,19 @@ ${item.city ? `🌆 المدينة: ${item.city}\n` : ''}🏠 العنوان: ${
 ${item.hours ? `🕐 أوقات العمل: ${item.hours}` : ''}`.trim();
 }
 
-function copyToClipboard(text, buttonEl) {
+function copyToClipboard(text, buttonEl, itemName) {
   const showToast = () => {
     const toast = document.getElementById('toast');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
   };
 
-  // الطريقة الحديثة
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text)
       .then(() => {
         showToast();
+        // 📊 تتبع حدث النسخ
+        trackEvent('copy-' + (itemName || 'unknown'), 'نسخ بيانات');
         if (buttonEl) {
           const original = buttonEl.innerHTML;
           buttonEl.innerHTML = '✅ تم النسخ';
@@ -447,7 +479,6 @@ function copyToClipboard(text, buttonEl) {
   }
 }
 
-// طريقة احتياطية للمتصفحات القديمة
 function fallbackCopy(text, callback) {
   const textarea = document.createElement('textarea');
   textarea.value = text;
@@ -581,20 +612,28 @@ function renderItems(list) {
         ${phonesHTML}
         <div class="card-actions">
           <button class="action-btn btn-copy" data-copy-index="${idx}">📋 نسخ</button>
-          <a href="${suggestLink}" target="_blank" class="action-btn btn-suggest">⚠️ اقترح تعديلاً</a>
+          <a href="${suggestLink}" target="_blank" class="action-btn btn-suggest" data-suggest-name="${d.name || ''}">⚠️ اقترح تعديلاً</a>
         </div>
       </div>
     `;
   }).join('');
 
-  // 🆕 ربط أحداث النسخ
+  // ربط أحداث النسخ
   document.querySelectorAll('[data-copy-index]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(e.currentTarget.dataset.copyIndex, 10);
       const item = list[idx];
       if (item) {
-        copyToClipboard(buildCopyText(item), e.currentTarget);
+        copyToClipboard(buildCopyText(item), e.currentTarget, item.name);
       }
+    });
+  });
+
+  // 📊 ربط أحداث اقتراح التعديل
+  document.querySelectorAll('[data-suggest-name]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const name = e.currentTarget.dataset.suggestName;
+      trackEvent('suggest-' + name, 'اقترح تعديل');
     });
   });
 }
@@ -622,6 +661,11 @@ function filterItems() {
   });
 
   renderItems(filtered);
+
+  // 📊 تتبع الفلترة (إذا كان هناك فلتر فعّال)
+  if (q || t || sp || ar) {
+    trackEvent('filter-' + [t || 'all', sp || 'all', ar || 'all'].join('-'), 'فلترة');
+  }
 }
 
 function resetFilters() {
@@ -666,14 +710,47 @@ installButton.addEventListener('click', async () => {
   await deferredPrompt.userChoice;
   deferredPrompt = null;
   installButton.style.display = 'none';
+  // 📊 تتبع حدث التثبيت
+  trackEvent('install-app', 'تثبيت التطبيق');
 });
 
 window.addEventListener('appinstalled', () => {
   installButton.style.display = 'none';
 });
 
+/* ============================================
+   👁️ عدّاد الزيارات
+   ============================================ */
+function initVisitorCounter() {
+  const counterEl = document.getElementById('visitCounter');
+  if (!counterEl) return;
+
+  // انتظر حتى تحميل GoatCounter
+  let attempts = 0;
+  const maxAttempts = 50; // 5 ثوانٍ
+
+  const checkInterval = setInterval(() => {
+    attempts++;
+
+    if (window.goatcounter && typeof window.goatcounter.get_data === 'function') {
+      clearInterval(checkInterval);
+      window.goatcounter.get_data({
+        path: '',
+        callback: function(data) {
+          const total = data.total || 0;
+          counterEl.innerHTML = `<span>👁️</span><span>عدد الزوار: ${total.toLocaleString('ar-EG')}</span>`;
+        }
+      });
+    } else if (attempts >= maxAttempts) {
+      clearInterval(checkInterval);
+      counterEl.innerHTML = `<span>👁️</span><span>عدد الزوار غير متاح</span>`;
+    }
+  }, 100);
+}
+
 /* ▶️ التشغيل */
 loadData();
+initVisitorCounter();
 </script>
 
 </body>
