@@ -40,17 +40,24 @@
   header h1 { font-size: 1.8rem; margin-bottom: 6px; }
   header p { font-size: 0.95rem; opacity: 0.9; }
 
-  /* 🆕 عداد الزيارات */
+  /* 🆕 عداد الزوار */
   .visit-counter {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 12px;
-    padding: 6px 14px;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 6px 16px;
     background: rgba(255,255,255,0.2);
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 600;
+    color: white;
+  }
+
+  .visit-counter img {
+    height: 22px;
+    filter: brightness(0) invert(1);
+    vertical-align: middle;
   }
 
   #installButton {
@@ -307,9 +314,11 @@
 <header>
   <h1>🏥 دليل حلب الصحي</h1>
   <p>ابحث عن طبيب، مشفى، صيدلية، مختبر، أو مركز أشعة</p>
-  <div class="visit-counter" id="visitCounter">
+  <div class="visit-counter">
     <span>👁️</span>
-    <span>جاري التحميل...</span>
+    <img src="https://hs83.goatcounter.com/count.svg?path=" 
+         alt="عدد الزوار"
+         onerror="this.parentElement.style.display='none'">
   </div>
 </header>
 
@@ -356,7 +365,7 @@ const ADMIN_WHATSAPP = "963XXXXXXXXX";
 // ⚠️ استبدل XXXXXXXXX برقمك بدون الصفر وبدون +
 
 /* ============================================
-   📊 دالة تتبع GoatCounter
+   📊 تتبع GoatCounter
    ============================================ */
 function trackEvent(path, title) {
   if (window.goatcounter && window.goatcounter.count) {
@@ -465,7 +474,6 @@ function copyToClipboard(text, buttonEl, itemName) {
     navigator.clipboard.writeText(text)
       .then(() => {
         showToast();
-        // 📊 تتبع حدث النسخ
         trackEvent('copy-' + (itemName || 'unknown'), 'نسخ بيانات');
         if (buttonEl) {
           const original = buttonEl.innerHTML;
@@ -618,7 +626,6 @@ function renderItems(list) {
     `;
   }).join('');
 
-  // ربط أحداث النسخ
   document.querySelectorAll('[data-copy-index]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(e.currentTarget.dataset.copyIndex, 10);
@@ -629,7 +636,6 @@ function renderItems(list) {
     });
   });
 
-  // 📊 ربط أحداث اقتراح التعديل
   document.querySelectorAll('[data-suggest-name]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const name = e.currentTarget.dataset.suggestName;
@@ -662,7 +668,6 @@ function filterItems() {
 
   renderItems(filtered);
 
-  // 📊 تتبع الفلترة (إذا كان هناك فلتر فعّال)
   if (q || t || sp || ar) {
     trackEvent('filter-' + [t || 'all', sp || 'all', ar || 'all'].join('-'), 'فلترة');
   }
@@ -710,7 +715,6 @@ installButton.addEventListener('click', async () => {
   await deferredPrompt.userChoice;
   deferredPrompt = null;
   installButton.style.display = 'none';
-  // 📊 تتبع حدث التثبيت
   trackEvent('install-app', 'تثبيت التطبيق');
 });
 
@@ -718,40 +722,9 @@ window.addEventListener('appinstalled', () => {
   installButton.style.display = 'none';
 });
 
-/* ============================================
-   👁️ عدّاد الزيارات
-   ============================================ */
-function initVisitorCounter() {
-  const counterEl = document.getElementById('visitCounter');
-  if (!counterEl) return;
-
-  // انتظر حتى تحميل GoatCounter
-  let attempts = 0;
-  const maxAttempts = 50; // 5 ثوانٍ
-
-  const checkInterval = setInterval(() => {
-    attempts++;
-
-    if (window.goatcounter && typeof window.goatcounter.get_data === 'function') {
-      clearInterval(checkInterval);
-      window.goatcounter.get_data({
-        path: '',
-        callback: function(data) {
-          const total = data.total || 0;
-          counterEl.innerHTML = `<span>👁️</span><span>عدد الزوار: ${total.toLocaleString('ar-EG')}</span>`;
-        }
-      });
-    } else if (attempts >= maxAttempts) {
-      clearInterval(checkInterval);
-      counterEl.innerHTML = `<span>👁️</span><span>عدد الزوار غير متاح</span>`;
-    }
-  }, 100);
-}
-
 /* ▶️ التشغيل */
 loadData();
-initVisitorCounter();
 </script>
 
 </body>
- </html>
+        </html>
