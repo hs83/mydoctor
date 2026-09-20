@@ -54,35 +54,77 @@
     backdrop-filter: blur(4px);
   }
 
-  /* 📊 شريط الإحصائيات السريعة */
-  .stats-bar {
-    display: flex;
-    justify-content: space-around;
+  /* 📊 اللوحة التفاعلية */
+  .stats-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 8px;
     margin-bottom: 16px;
-    flex-wrap: wrap;
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
   .stat-card {
-    flex: 1;
-    min-width: 90px;
-    background: white;
-    padding: 10px 8px;
-    border-radius: 12px;
     text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    border: 1px solid #e9ecef;
+    padding: 10px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.15s;
+    border: 2px solid transparent;
+    background: #f8f9fa;
+    user-select: none;
   }
 
-  .stat-card .num {
+  .stat-card:hover {
+    background: #e7f1ff;
+    transform: translateY(-2px);
+  }
+
+  .stat-card.active {
+    background: #0d6efd;
+    color: white;
+    border-color: #0a58ca;
+  }
+
+  .stat-card .stat-num {
+    font-size: 1.3rem;
     font-weight: 800;
-    font-size: 1.2rem;
     color: #0d6efd;
+    line-height: 1.2;
   }
 
-  .stat-card .label {
-    font-size: 0.75rem;
+  .stat-card.active .stat-num { color: white; }
+
+  .stat-card .stat-label {
+    font-size: 0.72rem;
     color: #6c757d;
+    margin-top: 2px;
+    line-height: 1.2;
+  }
+
+  .stat-card.active .stat-label { color: rgba(255,255,255,0.9); }
+
+  .stat-total {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.15s;
+    border: 2px solid transparent;
+    user-select: none;
+  }
+
+  .stat-total:hover { transform: translateY(-2px); }
+  .stat-total.active { border-color: #ffc107; }
+  .stat-total .stat-num { color: white; font-size: 1.5rem; }
+  .stat-total .stat-label {
+    color: rgba(255,255,255,0.9);
+    font-size: 0.85rem;
   }
 
   #installButton {
@@ -358,13 +400,8 @@
   </div>
 </header>
 
-<!-- 📊 شريط الإحصائيات -->
-<div class="stats-bar" id="statsBar">
-  <div class="stat-card"><div class="num" id="statDoctors">-</div><div class="label">أطباء</div></div>
-  <div class="stat-card"><div class="num" id="statPharmacies">-</div><div class="label">صيدليات</div></div>
-  <div class="stat-card"><div class="num" id="statHospitals">-</div><div class="label">مشافي</div></div>
-  <div class="stat-card"><div class="num" id="statTotal">-</div><div class="label">إجمالي الخدمات</div></div>
-</div>
+<!-- 📊 اللوحة التفاعلية -->
+<div class="stats-panel" id="statsPanel"></div>
 
 <button id="installButton">📲 تثبيت التطبيق على الموبايل</button>
 
@@ -421,7 +458,7 @@ function trackEvent(path, title) {
 }
 
 /* ============================================
-   👁️ عداد الزوار عبر API
+   👁️ عداد الزوار
    ============================================ */
 async function loadVisitorCount() {
   const countEl = document.getElementById('visitorCount');
@@ -513,10 +550,17 @@ function buildSuggestLink(item) {
 }
 
 /* ============================================
-   📍 رابط الخريطة
+   📍 رابط الخريطة المحسّن
    ============================================ */
 function buildMapLink(item) {
-  const query = `${item.name || ''} ${item.area || ''} حلب`;
+  const parts = [
+    item.name || '',
+    item.address || '',
+    item.area || '',
+    'حلب'
+  ].filter(Boolean);
+
+  const query = parts.join(' ');
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
@@ -581,6 +625,7 @@ function fallbackCopy(text, callback) {
    🌐 متغيرات
    ============================================ */
 let allItems = [];
+let activeStatType = '';
 const searchInput = document.getElementById('search');
 const typeSelect = document.getElementById('type');
 const specialtySelect = document.getElementById('specialty');
@@ -598,9 +643,9 @@ async function loadData() {
     const res = await fetch('doctors.json');
     if (!res.ok) throw new Error('فشل تحميل الملف');
     allItems = await res.json();
-    updateStats(allItems);
     fillSelects();
     updateSpecialtyVisibility();
+    renderStats();
     renderItems(allItems);
   } catch (err) {
     doctorsContainer.innerHTML = '<div class="empty">⚠️ تعذّر تحميل البيانات</div>';
@@ -609,17 +654,51 @@ async function loadData() {
 }
 
 /* ============================================
-   📊 حساب وتحديث الإحصائيات
+   📊 اللوحة التفاعلية
    ============================================ */
-function updateStats(items) {
-  const doctors = items.filter(i => i.type === 'طبيب').length;
-  const pharmacies = items.filter(i => i.type === 'صيدلية').length;
-  const hospitals = items.filter(i => i.type === 'مشفى').length;
+function renderStats() {
+  const panel = document.getElementById('statsPanel');
+  if (!panel) return;
 
-  document.getElementById('statDoctors').textContent = doctors;
-  document.getElementById('statPharmacies').textContent = pharmacies;
-  document.getElementById('statHospitals').textContent = hospitals;
-  document.getElementById('statTotal').textContent = items.length;
+  // احسب العدد لكل نوع
+  const counts = {};
+  allItems.forEach(i => {
+    const t = i.type || 'أخرى';
+    counts[t] = (counts[t] || 0) + 1;
+  });
+
+  // رتّب الأنواع حسب العدد تنازلياً
+  const sortedTypes = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const total = allItems.length;
+
+  let html = sortedTypes.map(([type, count]) => `
+    <div class="stat-card ${activeStatType === type ? 'active' : ''}" data-type="${type}">
+      <div class="stat-num">${count}</div>
+      <div class="stat-label">${type}</div>
+    </div>
+  `).join('');
+
+  html += `
+    <div class="stat-total ${activeStatType === '' ? 'active' : ''}" data-type="">
+      <div class="stat-num">${total}</div>
+      <div class="stat-label">إجمالي الخدمات</div>
+    </div>
+  `;
+
+  panel.innerHTML = html;
+
+  // ربط الأحداث
+  panel.querySelectorAll('[data-type]').forEach(el => {
+    el.addEventListener('click', () => {
+      const type = el.dataset.type;
+      activeStatType = type;
+      typeSelect.value = type;
+      updateSpecialtyVisibility();
+      filterItems();
+      // مرّر للقائمة
+      doctorsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
 
 /* ============================================
@@ -710,13 +789,14 @@ function renderItems(list) {
         ${phonesHTML}
         <div class="card-actions">
           <button class="action-btn btn-copy" data-copy-index="${idx}">📋 نسخ</button>
-          <a href="${mapLink}" target="_blank" class="action-btn btn-map">📍 الخريطة</a>
-          <a href="${suggestLink}" target="_blank" class="action-btn btn-suggest" data-suggest-name="${d.name || ''}">⚠️ اقترح تعديلاً</a>
+          <a href="${mapLink}" target="_blank" class="action-btn btn-map" data-map-name="${d.name || ''}">📍 الخريطة</a>
+          <a href="${suggestLink}" target="_blank" class="action-btn btn-suggest" data-suggest-name="${d.name || ''}">⚠️ اقتراح</a>
         </div>
       </div>
     `;
   }).join('');
 
+  // ربط أحداث النسخ
   document.querySelectorAll('[data-copy-index]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(e.currentTarget.dataset.copyIndex, 10);
@@ -727,10 +807,19 @@ function renderItems(list) {
     });
   });
 
+  // ربط أحداث اقتراح التعديل
   document.querySelectorAll('[data-suggest-name]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const name = e.currentTarget.dataset.suggestName;
       trackEvent('suggest-' + name, 'اقترح تعديل');
+    });
+  });
+
+  // 🆕 ربط أحداث الخريطة
+  document.querySelectorAll('[data-map-name]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const name = e.currentTarget.dataset.mapName;
+      trackEvent('map-' + name, 'فتح الخريطة');
     });
   });
 }
@@ -759,6 +848,10 @@ function filterItems() {
 
   renderItems(filtered);
 
+  // 🆕 مزامنة اللوحة مع فلتر النوع
+  activeStatType = typeSelect.value;
+  renderStats();
+
   if (q || t || sp || ar) {
     trackEvent('filter-' + [t || 'all', sp || 'all', ar || 'all'].join('-'), 'فلترة');
   }
@@ -769,7 +862,9 @@ function resetFilters() {
   typeSelect.value = '';
   specialtySelect.value = '';
   areaSelect.value = '';
+  activeStatType = '';
   updateSpecialtyVisibility();
+  renderStats();
   renderItems(allItems);
 }
 
@@ -819,5 +914,4 @@ loadVisitorCount();
 </script>
 
 </body>
-</html>
-
+ </html>
